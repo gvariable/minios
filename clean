@@ -1,0 +1,1 @@
+find . -path ./tools  -prune -o -print -exec rm -rf {} +

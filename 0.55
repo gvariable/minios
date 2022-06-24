@@ -1,0 +1,41 @@
+#! /bin/bash
+. ./tools/config
+./tools/addcmd.sh bash ls ps mkdir mount lsmod modinfo insmod modprobe df
+
+bashPath=`which bash`
+
+cat << EOF > init 
+#! $bashPath
+
+insmod /lib/modules/$(uname -r)/kernel/drivers/message/fusion/mptbase.ko
+insmod /lib/modules/$(uname -r)/kernel/drivers/message/fusion/mptscsih.ko
+insmod /lib/modules/$(uname -r)/kernel/drivers/scsi/scsi_transport_spi.ko
+insmod /lib/modules/$(uname -r)/kernel/drivers/message/fusion/mptspi.ko
+
+[ -d /dev ] || mkdir -m 0755 /dev
+[ -d /root ] || mkdir -m 0700 /root
+[ -d /sys ] || mkdir /sys
+[ -d /proc ] || mkdir /proc
+[ -d /run ] || mkdir /run
+
+
+mount -t tmpfs tmpfs /run
+mount -t sysfs sysfs /sys
+mount -t proc proc /proc
+mount -t devtmpfs dev /dev
+
+$bashPath
+EOF
+
+chmod +x init 
+./tools/pack.sh
+
+[ ! -e /dev/gpl-hd ] || sudo dd if=/dev/zero of=/dev/gpl-hd bs=1M count=2000
+[ ! -e /dev/gpl-hd ] || ./tools/template.sh
+
+sudo kvm -kernel $KERNEL \
+ -cpu host \
+ -initrd $INITRD \
+ -display curses \
+ -m 1G \
+ -drive file=/dev/gpl-hd,format=raw

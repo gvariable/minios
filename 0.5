@@ -1,0 +1,20 @@
+#! /bin/bash
+. ./tools/config
+./tools/addcmd.sh bash ls 
+
+cat << EOF > init
+#! /bin/bash 
+/bin/bash
+EOF
+
+chmod +x init
+./tools/pack.sh
+
+echo "initialize kvm" 
+echo "kernel: $KERNEL"
+echo "initrd: $INITRD"
+
+sudo kvm -kernel $KERNEL \
+ -cpu host \
+ -initrd $INITRD \
+ -display curses
